@@ -5,8 +5,9 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
+#include "glm/glm.hpp"
+#include "glm/gtc/matrix_transform.hpp"
 
-#include "Renderer.h"
 #include "Shader.h"
 
 
@@ -35,6 +36,20 @@ void Shader::UnBind() const
     glUseProgram(0);
 }
 
+void Shader::SetUniform1i(const std::string& name, int val)
+{
+    glUniform1i(GetUniformLocation(name), val);
+}
+
+void Shader::SetUniform1f(const std::string& name, float val)
+{
+    glUniform1f(GetUniformLocation(name), val);
+}
+
+void Shader::SetUniformMat4(const std::string& name, glm::mat4 f0)
+{
+    glUniformMatrix4fv(GetUniformLocation(name), 1, GL_FALSE, &f0[0][0]);
+}
 void Shader::SetUniform4f(const std::string& name, float f0, float f1, float f2, float f3)
 {
     glUniform4f(GetUniformLocation(name), f0, f1, f2, f3);

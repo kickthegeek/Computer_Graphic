@@ -7,7 +7,7 @@
 #include "VertexBuffer.h"
 #include "VertexArray.h"
 #include "Shader.h"
-
+#include "texture.h"
 
 
 
@@ -26,7 +26,7 @@ int main(void)
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_COMPAT_PROFILE);
 
     /* Create a windowed mode window and its OpenGL context */
-    window = glfwCreateWindow(640, 480, "Hello World", NULL, NULL);
+    window = glfwCreateWindow(640, 480, "TP 9 SI", NULL, NULL);
     if (!window)
     {
         glfwTerminate();
@@ -42,55 +42,26 @@ int main(void)
         std::cout << "Error !" << std::endl ;
     
     // FIRST OBJECT PARAMETERS
-    float positions[] = {
-       -0.5f, 0.5f, //0
-        0.5f,  0.5f, // 1
-        -0.5f, -0.5f, // 3
-        0.5f,  -0.5f, // 4
-
+    float positions[] = { // + textures
+       -0.5f, 0.5f, 0.0f,  0.0f,0.0f, //0
+        0.5f,  0.5f, 0.0f, 1.0f,0.0f, //1 
+        -0.5f, -0.5f, 0.0f, 1.0f,1.0f, //2
+        0.5f,  -0.5f, 0.0f, 0.0f,1.0f, //3
+         
     };
     unsigned int indices[] = {
         0,1,2,
         1,3,2
 
     };
-    float positions2[] = {
-       -0.75f, 0.75f, //0
-        0.75f,  0.75f, // 1
-        -0.75f, -0.75f, // 3
-        0.75f,  -0.75f, // 4
-
-    };
-    unsigned int indices2[] = {
-        0,1,2,
-        1,3,2
-
-    };
-    //converting these to 
-    //unsigned int vao;
-    //glGenVertexArrays(1, &vao);
-    //glBindVertexArray(vao);
-    //these 
+ 
     VertexArray va;
-
-
-    //replacing the old code 
-    //creating first object
-    VertexBuffer vb(positions, 4 * 2 * sizeof(float));
-    //converting these 
-    /*glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), 0);
-    *///to these
+    VertexBuffer vb(positions,4*3 * sizeof(float));
     VertexBufferLayout layout;
+    layout.Push<float>(3);
     layout.Push<float>(2);
     va.addBUffer(vb, layout);
-    IndexBuffer ib(indices, 6);
-    
-    
-
-
-    glm::mat4 proj = glm::ortho(-2.0f, 2.0f, -1.5f, 1.5f,-1.0f,1.0f );
-
+    IndexBuffer ib(indices,6);
     //shader declar
     
     Shader shader("res/shaders/shad.shader");
@@ -103,7 +74,10 @@ int main(void)
     shader.UnBind();
     vb.Bind();
     ib.Unbind();
-    
+
+
+    glEnable(GL_DEPTH_TEST);
+	glDepthFunc(GL_LESS);
 
     float r = 0.2f;
     float incr = 0.05f;
@@ -111,20 +85,40 @@ int main(void)
     while (!glfwWindowShouldClose(window))
     {
         /* Render here */
-        glClear(GL_COLOR_BUFFER_BIT);
-
+        //glClear(GL_COLOR_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glClearColor(0.5f, 0.2f, 0.3f,1.0f);
    
+
+        glm::mat4 Projection = glm::perspective(glm::radians(60.0f), 4.0f / 3.0f, 0.1f, 100.0f);
+        glm::mat4 View = glm::lookAt(glm::vec3(0, 0, 4), glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
+        glm::mat4 Model = glm::mat4(1.0f);
+        Model = glm::rotate(Model, glm::radians(45.f), glm::vec3(1, 0, 0));
+        Model = glm::rotate(Model, glm::radians(20.0f), glm::vec3(0, 1, 0));
+        Model = glm::rotate(Model, glm::radians(-20.f), glm::vec3(0, 0, 1));
+        glm::mat4 MVP = Projection * View * Model;
+        shader.SetUniformMat4("u_MVP", MVP);
+
+
+        Texture texture("res/textures/0.raw");
+        texture.Bind();
         shader.Bind();
-        shader.SetUniform4f("u_Color",r, 0.3f, 0.8f, 1.0f);
-        VertexBuffer vb(positions, 4 * 2 * sizeof(float));
+        //shader.SetUniform4f("u_Color", r, 0.3f, 0.8f, 1.0f
+        shader.SetUniform1i("u_Texture", 0);
+      
+        VertexArray va;
         va.Bind();
+        VertexBuffer vb(positions, 5 * 4 * sizeof(float));
         VertexBufferLayout layout;
+        layout.Push<float>(3);
         layout.Push<float>(2);
+        vb.Bind();
         va.addBUffer(vb, layout);
         IndexBuffer ib(indices, 6);
-        
+        ib.Bind();
         GLCall(glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr));
         
+
         r += incr;
         if (r > 1.0f || r < 0.0f)
             incr =  - incr ;
