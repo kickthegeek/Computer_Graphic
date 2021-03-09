@@ -31,9 +31,43 @@ glm::vec3 getColor(int r,int g, int b)
 }
 
 
+
+// LINES OF 3 AXES 
+float x_axe[] = {
+     -1000.0f, 0.0f, 0.0f,  //0
+      1000.0f, 0.0f, 0.0f,  //1
+};
+float y_axe[] = {
+      0.0f,-1000.0f, 0.0f,  //0
+      0.0f, 1000.0f, 0.0f,  //1
+};
+float z_axe[] = {
+      0.0f, 0.0f,-1000.0f,  //0
+      0.0f, 0.0f, 1000.0f,  //1
+};
+unsigned int axe_ind[] = {
+    0,1
+};
+// SQUARE
+float positions[] = { // color
+   -0.5f, 0.5f, 0.0f,  //0
+    0.5f,  0.5f, 0.0f, //1 
+   -0.5f, -0.5f, 0.0f, //2
+    0.5f,  -0.5f, 0.0f, //3
+
+};
+unsigned int indices[] = {
+    0,1,2,
+    1,3,2
+};
+//-------------
 float camera_posx = 0.0f;
 float scale = 1.0f;
 float angle = 0.1f;
+
+float camSpeed = 0.1f;
+float mouseSpeed = 2.0f;
+
 
 glm::vec3 camPos = glm::vec3(0.0f, 0.0f, 3.0f);
 glm::vec3 camDirection = glm::vec3(0.0f, 0.0f, -1.0f);
@@ -60,7 +94,7 @@ int main(void)
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_COMPAT_PROFILE);
 
     /* Create a windowed mode window and its OpenGL context */
-    window = glfwCreateWindow(640, 480, "Projet OpenGL SI MIV 2021 GUENAOUI + NAIT KACI ", NULL, NULL);
+    window = glfwCreateWindow(800, 600, "Projet OpenGL SI MIV 2021 GUENAOUI + NAIT KACI ", NULL, NULL);
     if (!window)
     {
         glfwTerminate();
@@ -76,34 +110,6 @@ int main(void)
         std::cout << "Error !" << std::endl ;
     
 
-    // LINES OF 3 AXES 
-    float x_axe[] = {
-         -1000.0f, 0.0f, 0.0f,  //0
-          1000.0f, 0.0f, 0.0f,  //1
-    };
-    float y_axe[] = {
-          0.0f,-1000.0f, 0.0f,  //0
-          0.0f, 1000.0f, 0.0f,  //1
-    };
-    float z_axe[] = {
-          0.0f, 0.0f,-1000.0f,  //0
-          0.0f, 0.0f, 1000.0f,  //1
-    };
-    unsigned int axe_ind[] = {
-        0,1
-    };
-    // SQUARE
-    float positions[] = { // color
-       -0.5f, 0.5f, 0.0f,  //0
-        0.5f,  0.5f, 0.0f, //1 
-       -0.5f, -0.5f, 0.0f, //2
-        0.5f,  -0.5f, 0.0f, //3
-         
-    };
-    unsigned int indices[] = {
-        0,1,2,
-        1,3,2
-    };
 
     // second object sphere
     //generates all vertices of the sphere for the given radius, sectors and stacks. 
@@ -114,9 +120,9 @@ int main(void)
     int normals_length = 0;
     int texCoords_length = 0;
 
-    int radius = 10;
-    int sectorCount = 10;
-    int stackCount = 10;
+    int radius = 1;
+    int sectorCount = 38;
+    int stackCount =38;
     float x, y, z, xy;                              // vertex position
     float nx, ny, nz, lengthInv = 1.0f / radius;    // vertex normal
     float s, t;                                     // vertex texCoord
@@ -318,25 +324,33 @@ int main(void)
         ibza.Bind();
         GLCall(glDrawElements(GL_LINES, 2, GL_UNSIGNED_INT, nullptr));
 
-
+        
+        //transforms for the ball 
+        glm::mat4 ball_model = glm::translate(Model, glm::vec3(0.0f,float( radius ) , 0.0f));
+        MVP = Projection * View * ball_model;
+        shader.SetUniformMat4("u_MVP", MVP);
         //drawing the objects
-        shader.SetUniform4f("u_Color", 1.0f, 0.3f, 0.8f, 1.0f);
-        //drawing sphere
-        VertexBuffer vbsphere(vertices, vertices_length * sizeof(float));
+        shader.SetUniform4f("u_Color", 1.0f, 1.0f, 1.0f, 1.0f);
+        //drawing ball
+        VertexBuffer vbsphere(vertices, (vertices_length) * sizeof(float));
         VertexBufferLayout layout_sphere;
         layout_sphere.Push<float>(3);
         vbsphere.Bind();
         va.addBUffer(vbsphere, layout_sphere);
-        IndexBuffer ibsphere(s_indices, s_indices_length);
+        IndexBuffer ibsphere(s_indices, s_indices_length+1);
         ibsphere.Bind();
-        GLCall(glDrawElements(GL_TRIANGLES, s_indices_length, GL_UNSIGNED_INT, nullptr));
+        GLCall(glDrawElements(GL_TRIANGLES, s_indices_length+1, GL_UNSIGNED_INT, (void*)0));
         
-
-        r += incr;
-        if (r > 1.0f || r < 0.0f)
-            incr =  - incr ;
-        //drawing square
-        shader.SetUniform4f("u_Color", r, 0.3f, 0.8f, 1.0f);
+        
+        //transforms  for the terrain
+        int stadium_length = 100;
+        glm::mat4 terrain_model = glm::translate(Model, glm::vec3(0.0f, 0.0f, 0.0f));
+        terrain_model = glm::rotate(terrain_model, glm::radians(90.0f), glm::vec3(1, 0, 0));
+        terrain_model = glm::scale(terrain_model, glm::vec3(1.0f * stadium_length/2, 1.0f *stadium_length, 1.0f));
+        MVP = Projection * View * terrain_model;
+        shader.SetUniformMat4("u_MVP", MVP);
+        //drawing the stadium
+        shader.SetUniform4f("u_Color", 0.0f, .5f, 0.0f, 1.0f);
 
         VertexBuffer vb(positions, 6 * 4 * sizeof(float));
         VertexBufferLayout layout;
@@ -346,6 +360,66 @@ int main(void)
         IndexBuffer ib(indices, 6);
         ib.Bind();
         GLCall(glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr));
+
+        
+        //drawing the middle white line 
+        int white_line_length = stadium_length / 2;
+        float white_line_stroke = 1.0f;
+        glm::mat4 white_line_model = glm::translate(Model, glm::vec3(0.0f, 0.001f, 0.0f)); // little bit over the terrain
+        white_line_model = glm::rotate(white_line_model, glm::radians(90.0f), glm::vec3(1, 0, 0));
+        white_line_model = glm::scale(white_line_model, glm::vec3(1.0f * white_line_length, 1.0f * white_line_stroke, 1.0f));
+        MVP = Projection * View * white_line_model;
+        shader.SetUniformMat4("u_MVP", MVP);
+        //white lines color
+        shader.SetUniform4f("u_Color", 0.8f, 0.8f, 0.8f, 1.0f);
+
+        va.addBUffer(vb, layout);
+        ib.Bind();
+        GLCall(glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr));
+
+        //drawing the left line 
+        float line_offset_z =  3 * white_line_length / 4;
+        float line_scale_x =   2 * white_line_length / 3;
+        glm::mat4 left_line_model = glm::translate(Model, glm::vec3(0.0f, 0.001f, -line_offset_z)); // little bit over the terrain
+        left_line_model = glm::rotate(left_line_model, glm::radians(90.0f), glm::vec3(1, 0, 0));
+        left_line_model = glm::scale(left_line_model, glm::vec3(1.0f * line_scale_x, 1.0f, 1.0f));
+        MVP = Projection * View * left_line_model;
+        shader.SetUniformMat4("u_MVP", MVP);
+
+        va.addBUffer(vb, layout);
+        ib.Bind();
+        GLCall(glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr));
+
+        //drawing right line 
+        glm::mat4 right_line_model = glm::translate(Model, glm::vec3(0.0f, 0.001f, line_offset_z)); // little bit over the terrain
+        right_line_model = glm::rotate(right_line_model, glm::radians(90.0f), glm::vec3(1, 0, 0));
+        right_line_model = glm::scale(right_line_model, glm::vec3(1.0f * line_scale_x, 1.0f, 1.0f));
+        MVP = Projection * View * right_line_model;
+        shader.SetUniformMat4("u_MVP", MVP);
+
+        va.addBUffer(vb, layout);
+        ib.Bind();
+        GLCall(glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr));
+
+
+        //going back to original matrix
+        MVP = Projection * View * Model;
+        shader.SetUniformMat4("u_MVP", MVP);
+
+        r += incr;
+        if (r > 1.0f || r < 0.0f)
+            incr =  - incr ;
+      
+        ////drawing square
+        //shader.SetUniform4f("u_Color", r, 0.3f, 0.8f, 1.0f)
+        //VertexBuffer vb(positions, 6 * 4 * sizeof(float));
+        //VertexBufferLayout layout;
+        //layout.Push<float>(3);
+        //vb.Bind();
+        //va.addBUffer(vb, layout);
+        //IndexBuffer ib(indices, 6);
+        //ib.Bind();
+        //GLCall(glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr));
         
 
 
@@ -371,7 +445,7 @@ int main(void)
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
-    float camSpeed = 0.1f;
+    
     if (key == GLFW_KEY_E && action == GLFW_PRESS)
         std::cout << "pess" + key << std::endl;
     if (action == GLFW_PRESS)
@@ -415,21 +489,82 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
             rotate_z += 1.0f;
             std::cout << "rotation Z " << rotate_z << std::endl;
             break;
+        case GLFW_KEY_X:
+            /* rotate around Z */
+            mouseSpeed += 0.1f;
+            std::cout << "mouse speed " << mouseSpeed << std::endl;
+            break;
+        case GLFW_KEY_Z:
+            /* rotate around Z */
+            mouseSpeed -= 0.1f;
+            std::cout << "mouse speed  " << mouseSpeed << std::endl;
+            break;
         case GLFW_KEY_Q: /* Escape */ exit(0);
             break;
 
         }
 }
+
 static void cursor_position_callback(GLFWwindow* window, double xpos, double ypos)
 {
     std::cout << xpos << " : " << ypos << " ;::::" << std::endl;
-    float camSpeed = 0.1f;
+    double new_xpos, new_ypos;
+    glfwGetCursorPos(window, &new_xpos, &new_ypos);
+    int move = -1;
+    
     int stateL = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT);
     if (stateL == GLFW_PRESS)
+    {   
+        if ((new_xpos - xpos) > 0) {
+            //std::cout << " CLICKED " << std::endl;
+            move = 0;
+            rotate_y += mouseSpeed;
+        }
+        if ((new_xpos - xpos) < 0) {
+            //std::cout << " CLICKED " << std::endl
+            move = 1;
+            rotate_y -= mouseSpeed;
+        }
+        if ((new_ypos - ypos) > 0) {
+            //std::cout << " CLICKED " << std::endl;
+            rotate_x += mouseSpeed;
+
+            move = 2;
+        }
+        if ((new_ypos - ypos) < 0) {
+            //std::cout << " CLICKED " << std::endl;
+            
+            rotate_x -= mouseSpeed;
+            move = 3;
+        }
+        std::cout << "rotation Y " << rotate_y << std::endl;
+        std::cout << "rotation X " << rotate_x << std::endl;
+
+        /*   camera_posx += 1.0f;
+           angle += 0.1f;
+           camPos += camSpeed * camDirection;*/
+
+    }
+    int stateR = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT);
+    if (stateR == GLFW_PRESS)
     {
         //std::cout << " CLICKED " << std::endl;
-        rotate_y += 1.0f;
-        std::cout << "rotation Y " << rotate_y << std::endl;
+        scale += 0.1f;
+        std::cout << "scale  " << scale<< std::endl;
+
+        /*   camera_posx += 1.0f;
+           angle += 0.1f;
+           camPos += camSpeed * camDirection;*/
+
+    }
+    int stateM = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_MIDDLE);
+    if (stateM == GLFW_PRESS)
+    {
+        //std::cout << " CLICKED " << std::endl;
+        scale -= 0.1f;
+        if (scale < 0)
+            scale = 0.1f;
+        std::cout << "scale  " << scale << std::endl;
 
         /*   camera_posx += 1.0f;
            angle += 0.1f;
