@@ -142,16 +142,14 @@ int main(void)
 
     // second object sphere
     //generates all vertices of the sphere for the given radius, sectors and stacks. 
-    float vertices[10000];
-    float normals[10000];
-    float texCoords[10000];
-    int vertices_length = 0;
-    int normals_length = 0;
-    int texCoords_length = 0;
+    std::vector<float> vertices;
+    std::vector<float> normals;
+    std::vector<float> texCoords;
+
 
     int radius = 1;
     int sectorCount = 38;
-    int stackCount =38;
+    int stackCount = 38;
     float x, y, z, xy;                              // vertex position
     float nx, ny, nz, lengthInv = 1.0f / radius;    // vertex normal
     float s, t;                                     // vertex texCoord
@@ -175,29 +173,29 @@ int main(void)
             // vertex position (x, y, z)
             x = xy * cosf(sectorAngle);             // r * cos(u) * cos(v)
             y = xy * sinf(sectorAngle);             // r * cos(u) * sin(v)
-            vertices[vertices_length++] = x;
-            vertices[vertices_length++] = y;
-            vertices[vertices_length++] = z;
+            vertices.push_back(x);
+            vertices.push_back(y);
+            vertices.push_back(z);
 
             // normalized vertex normal (nx, ny, nz)
             nx = x * lengthInv;
             ny = y * lengthInv;
             nz = z * lengthInv;
-            normals[normals_length++] = nx;
-            normals[normals_length++] = ny;
-            normals[normals_length++] = nz;
+            normals.push_back(nx);
+            normals.push_back(ny);
+            normals.push_back(nz);
+
             // vertex tex coord (s, t) range between [0, 1]
             s = (float)j / sectorCount;
             t = (float)i / stackCount;
-            texCoords[texCoords_length++] = s;
-            texCoords[texCoords_length++] = t;
+            texCoords.push_back(s);
+            texCoords.push_back(t);
         }
     }
+
     //indices
-    unsigned int s_indices[10000];
-    unsigned int s_lineIndices[10000];
-    int s_indices_length = 0;
-    int s_lineIndices_length = 0;
+    std::vector<int> indices_s;
+    std::vector<int> lineIndices;
     int k1, k2;
     for (int i = 0; i < stackCount; ++i)
     {
@@ -210,35 +208,57 @@ int main(void)
             // k1 => k2 => k1+1
             if (i != 0)
             {
-                s_indices[s_indices_length++] = k1;
-                s_indices[s_indices_length++] = k2; 
-                s_indices[s_indices_length++] = k1+1;
+                indices_s.push_back(k1);
+                indices_s.push_back(k2);
+                indices_s.push_back(k1 + 1);
             }
 
             // k1+1 => k2 => k2+1
             if (i != (stackCount - 1))
             {
-                s_lineIndices[s_lineIndices_length++] = k1 + 1;
-                s_lineIndices[s_lineIndices_length++] = k2;
-                s_lineIndices[s_lineIndices_length++] = k2 + 1;
-
+                indices_s.push_back(k1 + 1);
+                indices_s.push_back(k2);
+                indices_s.push_back(k2 + 1);
             }
 
             // store indices for lines
             // vertical lines for all stacks, k1 => k2
-            s_lineIndices[s_lineIndices_length++] = k1;
-            s_lineIndices[s_lineIndices_length++] = k2 ;
-
+            lineIndices.push_back(k1);
+            lineIndices.push_back(k2);
             if (i != 0)  // horizontal lines except 1st stack, k1 => k+1
             {
-                s_lineIndices[s_lineIndices_length++] = k1;
-
-                s_lineIndices[s_lineIndices_length++] = k1 + 1;
-
+                lineIndices.push_back(k1);
+                lineIndices.push_back(k1 + 1);
             }
         }
     }
 
+    
+    int vertices_length = vertices.size();
+    int normals_length = normals.size();
+    int texCoords_length = texCoords.size();
+    int sphere_indices_length = indices_s.size();
+    int sphere_line_indices_length = lineIndices.size();
+
+    float  * sphere_vertexes = new float[vertices_length];
+    for (int i = 0; i < vertices_length; i++)
+        sphere_vertexes[i] = vertices[i];
+    
+    float* sphere_normals = new float[normals_length];
+    for (int i = 0; i < normals_length; i++)
+        sphere_normals[i] = normals[i];
+
+    float* sphere_text_coords = new float[texCoords_length];
+    for (int i = 0; i < texCoords_length; i++)
+        sphere_text_coords[i] = texCoords[i];
+    
+    unsigned int * sphere_indices = new unsigned int[sphere_indices_length];
+    for (int i = 0; i < sphere_indices_length; i++)
+        sphere_indices[i] = indices_s[i];
+    
+    float* sphere_line_coords = new float[sphere_line_indices_length];
+    for (int i = 0; i < sphere_line_indices_length; i++)
+        sphere_line_coords[i] = lineIndices[i];
     //---------end of sphere
 
     //-------- cube 
@@ -427,14 +447,14 @@ int main(void)
         //background box 
         shader.SetUniform4f("u_Color", 0.0f, 0.5f, 5.0f, 1.0f);
         //drawing ball
-        VertexBuffer vbsphere(vertices, (vertices_length) * sizeof(float));
+        VertexBuffer vbsphere(sphere_vertexes, (vertices_length) * sizeof(float));
         VertexBufferLayout layout_sphere;
         layout_sphere.Push<float>(3);
         vbsphere.Bind();
         va.addBUffer(vbsphere, layout_sphere);
-        IndexBuffer ibsphere(s_indices, s_indices_length+1);
+        IndexBuffer ibsphere(sphere_indices, sphere_indices_length);
         ibsphere.Bind();
-        GLCall(glDrawElements(GL_TRIANGLES, s_indices_length+1, GL_UNSIGNED_INT, (void*)0));
+        GLCall(glDrawElements(GL_TRIANGLES, sphere_indices_length, GL_UNSIGNED_INT, (void*)0));
         //done with background
         
 
@@ -451,10 +471,10 @@ int main(void)
 
 
        
-        VertexBuffer vbsphere1(vertices, (vertices_length) * sizeof(float));
+        VertexBuffer vbsphere1(sphere_vertexes, (vertices_length) * sizeof(float));
         VertexBufferLayout layout_sphere1;
         layout_sphere1.Push<float>(3);
-        VertexBuffer vbnormals(normals, (normals_length)*sizeof(float));
+        VertexBuffer vbnormals(sphere_normals, (normals_length)*sizeof(float));
         VertexBufferLayout layout_sphere1_normals;
         layout_sphere1_normals.Push<float>(3);
 
@@ -462,9 +482,9 @@ int main(void)
         vbnormals.Bind();
         va.addBUffer(vbsphere1, layout_sphere1);
         va.addBUffer(vbnormals, layout_sphere1_normals);
-        IndexBuffer ibsphere1(s_indices, s_indices_length + 1);
+        IndexBuffer ibsphere1(sphere_indices, sphere_indices_length );
         ibsphere1.Bind();
-        GLCall(glDrawElements(GL_TRIANGLES, s_indices_length, GL_UNSIGNED_INT, nullptr));
+        GLCall(glDrawElements(GL_TRIANGLES, sphere_indices_length, GL_UNSIGNED_INT, nullptr));
 
         //drawing the cubes right +  left  
         glm::mat4 cubes = glm::translate(Model, glm::vec3(0.0f, 0.0f, 0.0f));
