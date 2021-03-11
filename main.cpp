@@ -65,6 +65,7 @@ float camera_posx = 0.0f;
 float scale = 1.0f;
 float angle = 0.1f;
 
+int axis_rotation = 0;
 float camSpeed = 0.1f;
 float mouseSpeed = 2.0f;
 
@@ -78,6 +79,34 @@ float rotate_y = 0.0f;
 float rotate_z = 0.0f;
 
 glm::vec4 background_color = glm::vec4 (getColor(213,50,50),1.0f);
+
+float r = 0.2f;
+
+
+float incr = 0.1f;
+float backg_r = 0.0f;
+//center sphere rotation + speed 
+float center_sphere_r = 0.0f;
+float center_sphere_r_speed = 0.0f;
+
+//both diagonals speed
+float cones_diagonals_rotation = 0.0f;
+float cones_diagonals_rotation_speed = .0f;
+float cones_dr = 0.0f; // right diagonal rotation
+float cones_dl = 0.0f; // left diagonal rotqtion
+float cones_dr_speed = 1.0f; // right diagonal rotation
+float cones_dl_speed = 5.0f; // left diagonal rotqtion
+
+float cone1_r = 0.0f;
+float cone1_speed = 20.0f;
+float cone2_r = 0.0f;
+float cone2_speed = 5.0f;
+float cone3_r = 0.0f;
+float cone3_speed = 10.0f;
+float cone4_r = 0.0f;
+float cone4_speed = 3.0f;
+
+
 
 int main(void)
 {
@@ -212,6 +241,60 @@ int main(void)
 
     //---------end of sphere
 
+    //-------- cube 
+
+    unsigned int cube_vertexes_length = 8;
+    int cube_indices_length = 36;
+    float cube_vertexes[] = { // color
+       -0.5f,  0.5f, -0.5f,  //0
+        0.5f,  0.5f, -0.5f, //1 
+       -0.5f, -0.5f, -0.5f, //2
+        0.5f, -0.5f, -0.5f, //3
+       -0.5f,  0.5f,  0.5f,  //4
+        0.5f,  0.5f,  0.5f, //5
+       -0.5f, -0.5f,  0.5f, //6
+        0.5f, -0.5f,  0.5f, //7
+
+    };
+    unsigned int cube_indices[] = {
+        0,1,2, // 
+        1,3,2, // 1
+        4,5,7,
+        4,6,7,// 2
+        0,4,5,
+        0,5,1,//3
+        1,5,3,
+        3,5,7,//4
+        0,4,6,
+        0,6,2,//5
+        2,7,3,
+        2,7,6//6
+
+    };
+
+    //--------- end of cube 
+
+    //--------- Cone 
+    unsigned int cone_vertexes_length = 5;
+    int cone_indices_length = 18;
+    float cone_vertexes[] = { // color
+        0.0f, -0.5f, -0.5f,  //0
+        0.0f, -0.5f,  0.5f, //1 
+        0.0f,  0.5f,  0.5f, //2
+        0.0f,  0.5f, -0.5f, //3
+        1.0f,  0.0f,  0.0f,  //4
+        
+
+    };
+    unsigned int cone_indices[] = {
+        0,1,2,
+        0,3,2,
+        0,1,4,
+        3,2,4,
+        1,2,4,
+        0,3,4
+
+    };
  
     VertexArray va;
     VertexBuffer vb(positions, 4 * 3 * sizeof(float));
@@ -236,11 +319,8 @@ int main(void)
     glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LESS);
 
-    float r = 0.2f;
-
-
-    float incr = 0.05f;
     
+
     float speed = 3.0f; // 3 units / second
     float mouseSpeed = 0.005f;
     // Get mouse position
@@ -254,7 +334,8 @@ int main(void)
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glClearColor(0.0f, 0.0f, 0.0f, background_color[3]);
    
-
+        
+      
         //interaction functions call back 
          //keyboard and mouse call 
         glfwSetKeyCallback(window, key_callback);
@@ -287,50 +368,64 @@ int main(void)
         //Texture texture("res/textures/0.raw");
         //texture.Bind();
         shader.Bind();
-        shader.SetUniform4f("u_Color", r, 0.3f, 0.8f, 1.0f);
+        //shader.SetUniform4f("u_Color", r, 0.3f, 0.8f, 1.0f);
+        
+
+        shader.SetUniform4f("u_Color", 1.0f, 0.3f, 0.8f, 1.0f);
+      
+        
+        //lightning 
+
+        //shader.SetUniform3f("lightPos", 1.0f, 1.0f, 5.0f);
+        shader.SetUniform4f("lightColor", 1.0f, 1.0f, 1.0f, 1.0f);
+        //shader.SetUniform3f("viewPos", 0.0f, 0.0f, 2.0f);
         //shader.SetUniform1i("u_Texture", 0);
       
         VertexArray va;
         va.Bind();
         //drawing the axes
         //x_axis
-        shader.SetUniform4f("u_Color", 1.0f, 0.0f, 0.0f, 1.0f);
-        VertexBuffer vbxa(x_axe, 2 * 3 * sizeof(float));
-        VertexBufferLayout layout_xaxis;
-        layout_xaxis.Push<float>(3);
-        vbxa.Bind();
-        va.addBUffer(vbxa, layout_xaxis);
-        IndexBuffer ibxa(axe_ind, 2);
-        ibxa.Bind();
-        GLCall(glDrawElements(GL_LINES, 2, GL_UNSIGNED_INT, nullptr));
-        //y_axis
-        shader.SetUniform4f("u_Color", 0.0f, 1.0f, 0.0f, 1.0f);
-        VertexBuffer vbya(y_axe, 2 * 3 * sizeof(float));
-        VertexBufferLayout layout_yaxis;
-        layout_yaxis.Push<float>(3);
-        vbxa.Bind();
-        va.addBUffer(vbya, layout_yaxis);
-        IndexBuffer ibya(axe_ind, 2);
-        ibya.Bind();
-        GLCall(glDrawElements(GL_LINES, 2, GL_UNSIGNED_INT, nullptr));
-        //z_axis
-        shader.SetUniform4f("u_Color", 0.0f, 0.0f, 1.0f, 1.0f);
-        VertexBuffer vbza(z_axe, 2 * 3 * sizeof(float));
-        VertexBufferLayout layout_zaxis;
-        layout_zaxis.Push<float>(3);
-        vbza.Bind();
-        va.addBUffer(vbza, layout_yaxis);
-        IndexBuffer ibza(axe_ind, 2);
-        ibza.Bind();
-        GLCall(glDrawElements(GL_LINES, 2, GL_UNSIGNED_INT, nullptr));
+        //shader.SetUniform4f("u_Color", 1.0f, 0.0f, 0.0f, 1.0f);
+        //VertexBuffer vbxa(x_axe, 2 * 3 * sizeof(float));
+        //VertexBufferLayout layout_xaxis;
+        //layout_xaxis.Push<float>(3);
+        //vbxa.Bind();
+        //va.addBUffer(vbxa, layout_xaxis);
+        //IndexBuffer ibxa(axe_ind, 2);
+        //ibxa.Bind();
+        //GLCall(glDrawElements(GL_LINES, 2, GL_UNSIGNED_INT, nullptr));
+        ////y_axis
+        //shader.SetUniform4f("u_Color", 0.0f, 1.0f, 0.0f, 1.0f);
+        //VertexBuffer vbya(y_axe, 2 * 3 * sizeof(float));
+        //VertexBufferLayout layout_yaxis;
+        //layout_yaxis.Push<float>(3);
+        //vbxa.Bind();
+        //va.addBUffer(vbya, layout_yaxis);
+        //IndexBuffer ibya(axe_ind, 2);
+        //ibya.Bind();
+        //GLCall(glDrawElements(GL_LINES, 2, GL_UNSIGNED_INT, nullptr));
+        ////z_axis
+        //shader.SetUniform4f("u_Color", 0.0f, 0.0f, 1.0f, 1.0f);
+        //VertexBuffer vbza(z_axe, 2 * 3 * sizeof(float));
+        //VertexBufferLayout layout_zaxis;
+        //layout_zaxis.Push<float>(3);
+        //vbza.Bind();
+        //va.addBUffer(vbza, layout_yaxis);
+        //IndexBuffer ibza(axe_ind, 2);
+        //ibza.Bind();
+        //GLCall(glDrawElements(GL_LINES, 2, GL_UNSIGNED_INT, nullptr));
 
         
-        //transforms for the ball 
-        glm::mat4 ball_model = glm::translate(Model, glm::vec3(0.0f,float( radius ) , 0.0f));
+        //transforms for the background
+        //will make its radius big to fill background ( sky box ) 
+        glm::mat4 ball_model = glm::translate(Model, glm::vec3(0.0f,0.0f , 0.0f));
+        ball_model = glm::scale(ball_model, glm::vec3(20.0f, 20.0f, -20.0f));
+        ball_model = glm::rotate(ball_model, glm::radians(backg_r), glm::vec3(0, 0, 1));
         MVP = Projection * View * ball_model;
         shader.SetUniformMat4("u_MVP", MVP);
         //drawing the objects
-        shader.SetUniform4f("u_Color", 1.0f, 1.0f, 1.0f, 1.0f);
+        //background box 
+        shader.SetUniform4f("u_Color", 0.0f, 0.5f, 5.0f, 1.0f);
         //drawing ball
         VertexBuffer vbsphere(vertices, (vertices_length) * sizeof(float));
         VertexBufferLayout layout_sphere;
@@ -340,66 +435,180 @@ int main(void)
         IndexBuffer ibsphere(s_indices, s_indices_length+1);
         ibsphere.Bind();
         GLCall(glDrawElements(GL_TRIANGLES, s_indices_length+1, GL_UNSIGNED_INT, (void*)0));
+        //done with background
         
-        
-        //transforms  for the terrain
-        int stadium_length = 100;
-        glm::mat4 terrain_model = glm::translate(Model, glm::vec3(0.0f, 0.0f, 0.0f));
-        terrain_model = glm::rotate(terrain_model, glm::radians(90.0f), glm::vec3(1, 0, 0));
-        terrain_model = glm::scale(terrain_model, glm::vec3(1.0f * stadium_length/2, 1.0f *stadium_length, 1.0f));
-        MVP = Projection * View * terrain_model;
-        shader.SetUniformMat4("u_MVP", MVP);
-        //drawing the stadium
-        shader.SetUniform4f("u_Color", 0.0f, .5f, 0.0f, 1.0f);
-
-        VertexBuffer vb(positions, 6 * 4 * sizeof(float));
-        VertexBufferLayout layout;
-        layout.Push<float>(3);
-        vb.Bind();
-        va.addBUffer(vb, layout);
-        IndexBuffer ib(indices, 6);
-        ib.Bind();
-        GLCall(glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr));
 
         
-        //drawing the middle white line 
-        int white_line_length = stadium_length / 2;
-        float white_line_stroke = 1.0f;
-        glm::mat4 white_line_model = glm::translate(Model, glm::vec3(0.0f, 0.001f, 0.0f)); // little bit over the terrain
-        white_line_model = glm::rotate(white_line_model, glm::radians(90.0f), glm::vec3(1, 0, 0));
-        white_line_model = glm::scale(white_line_model, glm::vec3(1.0f * white_line_length, 1.0f * white_line_stroke, 1.0f));
-        MVP = Projection * View * white_line_model;
+        //transforms for the center sphere 
+        float center_radius = 5.0f;
+        glm::mat4 center_sphere = glm::translate(Model, glm::vec3(0.0f, 0.0f, 0.0f));
+        center_sphere = glm::rotate(center_sphere, glm::radians(center_sphere_r), glm::vec3(0, 1, 0));
+        //center_sphere = glm::scale(center_sphere, glm::vec3(center_radius, center_radius, center_radius));
+        MVP = Projection * View * center_sphere;
         shader.SetUniformMat4("u_MVP", MVP);
-        //white lines color
-        shader.SetUniform4f("u_Color", 0.8f, 0.8f, 0.8f, 1.0f);
+        //drawing the sphere
+        shader.SetUniform4f("u_Color", 1.f, .6f, 0.3f, 1.0f);
 
-        va.addBUffer(vb, layout);
-        ib.Bind();
-        GLCall(glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr));
 
-        //drawing the left line 
-        float line_offset_z =  3 * white_line_length / 4;
-        float line_scale_x =   2 * white_line_length / 3;
-        glm::mat4 left_line_model = glm::translate(Model, glm::vec3(0.0f, 0.001f, -line_offset_z)); // little bit over the terrain
-        left_line_model = glm::rotate(left_line_model, glm::radians(90.0f), glm::vec3(1, 0, 0));
-        left_line_model = glm::scale(left_line_model, glm::vec3(1.0f * line_scale_x, 1.0f, 1.0f));
-        MVP = Projection * View * left_line_model;
+       
+        VertexBuffer vbsphere1(vertices, (vertices_length) * sizeof(float));
+        VertexBufferLayout layout_sphere1;
+        layout_sphere1.Push<float>(3);
+        VertexBuffer vbnormals(normals, (normals_length)*sizeof(float));
+        VertexBufferLayout layout_sphere1_normals;
+        layout_sphere1_normals.Push<float>(3);
+
+        vbsphere1.Bind();
+        vbnormals.Bind();
+        va.addBUffer(vbsphere1, layout_sphere1);
+        va.addBUffer(vbnormals, layout_sphere1_normals);
+        IndexBuffer ibsphere1(s_indices, s_indices_length + 1);
+        ibsphere1.Bind();
+        GLCall(glDrawElements(GL_TRIANGLES, s_indices_length, GL_UNSIGNED_INT, nullptr));
+
+        //drawing the cubes right +  left  
+        glm::mat4 cubes = glm::translate(Model, glm::vec3(0.0f, 0.0f, 0.0f));
+        cubes  = glm::rotate(cubes, glm::radians(center_sphere_r), glm::vec3(0, 0, 1));
+        MVP = Projection * View * cubes;
+        shader.SetUniformMat4("u_MVP", MVP);
+        
+        //drawing the cube the right 
+        glm::mat4 cube_right = glm::translate(cubes, glm::vec3(2.0f, 0.0f, 0.0f));
+        cube_right = glm::rotate(cube_right, glm::radians(0.0f), glm::vec3(0, 1, 0));
+        //center_sphere = glm::scale(center_sphere, glm::vec3(center_radius, center_radius, center_radius));
+        MVP = Projection * View * cube_right;
         shader.SetUniformMat4("u_MVP", MVP);
 
-        va.addBUffer(vb, layout);
-        ib.Bind();
-        GLCall(glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr));
-
-        //drawing right line 
-        glm::mat4 right_line_model = glm::translate(Model, glm::vec3(0.0f, 0.001f, line_offset_z)); // little bit over the terrain
-        right_line_model = glm::rotate(right_line_model, glm::radians(90.0f), glm::vec3(1, 0, 0));
-        right_line_model = glm::scale(right_line_model, glm::vec3(1.0f * line_scale_x, 1.0f, 1.0f));
-        MVP = Projection * View * right_line_model;
+        
+        shader.SetUniform4f("u_Color", 0.0f, 0.5f, 1.f, 0.3f);
+        VertexBuffer vbcube(cube_vertexes, 8 * 3 * sizeof(float));
+        VertexBufferLayout layout_cube;
+        layout_cube.Push<float>(3);
+        vbcube.Bind();
+        va.addBUffer(vbcube, layout_cube);
+        IndexBuffer ibcube(cube_indices, cube_indices_length);
+        ibcube.Bind();
+        GLCall(glDrawElements(GL_TRIANGLES, cube_indices_length, GL_UNSIGNED_INT, nullptr));
+        //drawing the left cube 
+        
+        glm::mat4 cube_left = glm::translate(cubes, glm::vec3(-2.0f, 0.0f, 0.0f));
+        cube_left = glm::rotate(cube_left, glm::radians(0.0f), glm::vec3(0, 1, 0));
+        //center_sphere = glm::scale(center_sphere, glm::vec3(center_radius, center_radius, center_radius));
+        MVP = Projection * View * cube_left;
         shader.SetUniformMat4("u_MVP", MVP);
 
-        va.addBUffer(vb, layout);
-        ib.Bind();
-        GLCall(glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr));
+
+        shader.SetUniform4f("u_Color", 0.0f, 0.3f, 0.8f, .3f);
+        VertexBuffer vbcubeleft(cube_vertexes, 8 * 3 * sizeof(float));
+        VertexBufferLayout layout_cube_left;
+        layout_cube_left.Push<float>(3);
+        vbcubeleft.Bind();
+        va.addBUffer(vbcubeleft, layout_cube_left);
+        IndexBuffer ibcubeleft(cube_indices, cube_indices_length);
+        ibcubeleft.Bind();
+        GLCall(glDrawElements(GL_TRIANGLES, cube_indices_length, GL_UNSIGNED_INT, nullptr));
+        //done with the cubes 
+
+        //drawing the cones diagonal one
+        
+        glm::mat4 cones = glm::translate(Model, glm::vec3(0.0f, 0.0f, 0.0f));
+        cones = glm::rotate(cones, glm::radians(cones_diagonals_rotation), glm::vec3(0, 1, 0));
+        MVP = Projection * View * cones;
+        shader.SetUniformMat4("u_MVP", MVP);
+
+        //right diagonal 
+        glm::mat4 cones_right_diagonal = glm::translate(cones, glm::vec3(0.0f, 0.0f, 0.0f));
+        cones_right_diagonal = glm::rotate(cones_right_diagonal, glm::radians(45.0f), glm::vec3(0, 0, 1));
+        cones_right_diagonal = glm::rotate(cones_right_diagonal, glm::radians(cones_dr), glm::vec3(0, 1, 0));
+        MVP = Projection * View * cones_right_diagonal;
+        shader.SetUniformMat4("u_MVP", MVP);
+        //drawing first cone of the right diagonal
+        glm::mat4 cone_left = glm::translate(cones_right_diagonal, glm::vec3(2.0f, 0.0f, 0.0f));
+        cone_left = glm::rotate(cone_left, glm::radians(cone1_r), glm::vec3(1, 0, 0));
+        //center_sphere = glm::scale(center_sphere, glm::vec3(center_radius, center_radius, center_radius));
+        MVP = Projection * View * cone_left;
+        shader.SetUniformMat4("u_MVP", MVP);
+
+
+        shader.SetUniform4f("u_Color", 0.3f, 0.0f, 0.8f, .3f);
+        VertexBuffer vbconeleft(cone_vertexes, 5 * 3 * sizeof(float));
+        VertexBufferLayout layout_cone_left;
+        layout_cone_left.Push<float>(3);
+        vbconeleft.Bind();
+        va.addBUffer(vbconeleft, layout_cone_left);
+        IndexBuffer ibconeleft(cone_indices, cone_indices_length);
+        ibconeleft.Bind();
+        GLCall(glDrawElements(GL_TRIANGLES, cone_indices_length, GL_UNSIGNED_INT, nullptr));
+        
+       
+
+        //drawing second cone of the right diagonal
+        glm::mat4 cone_right = glm::translate(cones_right_diagonal, glm::vec3(-2.0f, 0.0f, 0.0f));
+        cone_right = glm::rotate(cone_right, glm::radians(cone2_r), glm::vec3(1, 0, 0));
+        cone_right = glm::scale(cone_right, glm::vec3(-1.0f,1.0f,1.0f));
+        //center_sphere = glm::scale(center_sphere, glm::vec3(center_radius, center_radius, center_radius));
+        MVP = Projection * View * cone_right;
+        shader.SetUniformMat4("u_MVP", MVP);
+
+
+        shader.SetUniform4f("u_Color", 0.3f, 0.0f, 0.8f, .3f);
+        VertexBuffer vbconeright(cone_vertexes, 5 * 3 * sizeof(float));
+        VertexBufferLayout layout_cone_right;
+        layout_cone_right.Push<float>(3);
+        vbconeright.Bind();
+        va.addBUffer(vbconeright, layout_cone_right);
+        IndexBuffer ibconeright(cone_indices, cone_indices_length);
+        ibconeright.Bind();
+        GLCall(glDrawElements(GL_TRIANGLES, cone_indices_length, GL_UNSIGNED_INT, nullptr));
+
+        // done with first diagonal 
+
+
+        //left diagonal
+        glm::mat4 cones_left_diagonal = glm::translate(cones, glm::vec3(0.0f, 0.0f, 0.0f));
+        cones_left_diagonal = glm::rotate(cones_left_diagonal, glm::radians(-45.0f), glm::vec3(0, 0, 1));
+        cones_left_diagonal = glm::rotate(cones_left_diagonal, glm::radians(cones_dl), glm::vec3(0, 1, 0)); // rotating
+        MVP = Projection * View * cones_left_diagonal;
+        shader.SetUniformMat4("u_MVP", MVP);
+        //drawing first cone of the left diagonal
+        glm::mat4 cone_left_1 = glm::translate(cones_left_diagonal, glm::vec3(2.0f, 0.0f, 0.0f));
+        cone_left_1 = glm::rotate(cone_left_1, glm::radians(cone3_r), glm::vec3(1, 0, 0));
+        //center_sphere = glm::scale(center_sphere, glm::vec3(center_radius, center_radius, center_radius));
+        MVP = Projection * View * cone_left_1;
+        shader.SetUniformMat4("u_MVP", MVP);
+
+
+        shader.SetUniform4f("u_Color", 0.3f, 0.0f, 0.8f, .3f);
+        VertexBuffer vbconeleft_1(cone_vertexes, 5 * 3 * sizeof(float));
+        VertexBufferLayout layout_cone_left_1;
+        layout_cone_left_1.Push<float>(3);
+        vbconeleft_1.Bind();
+        va.addBUffer(vbconeleft_1, layout_cone_left_1);
+        IndexBuffer ibconeleft_1(cone_indices, cone_indices_length);
+        ibconeleft_1.Bind();
+        GLCall(glDrawElements(GL_TRIANGLES, cone_indices_length, GL_UNSIGNED_INT, nullptr));
+
+
+
+        //drawing second cone of the left diagonal 
+        glm::mat4 cone_right_1 = glm::translate(cones_left_diagonal, glm::vec3(-2.0f, 0.0f, 0.0f));
+        cone_right_1 = glm::rotate(cone_right_1, glm::radians(cone4_r), glm::vec3(1, 0, 0));
+        cone_right_1 = glm::scale(cone_right_1, glm::vec3(-1.0f, 1.0f, 1.0f));
+        //center_sphere = glm::scale(center_sphere, glm::vec3(center_radius, center_radius, center_radius));
+        MVP = Projection * View * cone_right_1;
+        shader.SetUniformMat4("u_MVP", MVP);
+
+
+        shader.SetUniform4f("u_Color", 0.3f, 0.0f, 0.8f, .3f);
+        VertexBuffer vbconeright_1(cone_vertexes, 5 * 3 * sizeof(float));
+        VertexBufferLayout layout_cone_right_1;
+        layout_cone_right_1.Push<float>(3);
+        vbconeright_1.Bind();
+        va.addBUffer(vbconeright_1, layout_cone_right_1);
+        IndexBuffer ibconeright_1(cone_indices, cone_indices_length);
+        ibconeright_1.Bind();
+        GLCall(glDrawElements(GL_TRIANGLES, cone_indices_length, GL_UNSIGNED_INT, nullptr));
+
 
 
         //going back to original matrix
@@ -407,8 +616,30 @@ int main(void)
         shader.SetUniformMat4("u_MVP", MVP);
 
         r += incr;
-        if (r > 1.0f || r < 0.0f)
+        backg_r += 0.01f;
+        center_sphere_r += center_sphere_r_speed;
+        
+        cones_diagonals_rotation += cones_diagonals_rotation_speed;
+        
+        cones_dr += cones_dr_speed;
+        cones_dl += cones_dl_speed;
+
+        cone1_r += cone1_speed;
+        cone2_r += cone2_speed;
+        cone3_r += cone3_speed;
+        cone4_r += cone4_speed;
+
+        if (r > 0.5f || r < 0.0f)
             incr =  - incr ;
+        if (backg_r > 360.f)
+            backg_r = 0.0f;
+        if (center_sphere_r > 360.f)
+            center_sphere_r = 0.0f;
+        if (cones_dr > 360.f)
+            cones_dr = 0.0f;
+        if (cones_dl > 360.f)
+            cones_dl = 0.0f;
+        
       
         ////drawing square
         //shader.SetUniform4f("u_Color", r, 0.3f, 0.8f, 1.0f)
@@ -421,7 +652,7 @@ int main(void)
         //ib.Bind();
         //GLCall(glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr));
         
-
+        
 
         /* Swap front and back buffers */
         glfwSwapBuffers(window);
@@ -475,31 +706,50 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
             camPos = glm::vec3(camPos.x - camSpeed, camPos.y, camPos.z);
             break;
         case GLFW_KEY_Y:
-            /* rotate around Z */ 
-            rotate_x += 1.0f;
+            /* rotate around X */ 
+            //rotate_x += 1.0f;
+            axis_rotation = 0;
             std::cout << "rotation X " << rotate_x << std::endl;
             break;
         case GLFW_KEY_U:
-            /* rotate around Z */
-            rotate_y += 1.0f;
+            /* rotate around Y */
+            //rotate_y += 1.0f;
+            axis_rotation = 1;
             std::cout << "rotation Y " << rotate_y << std::endl;
             break;
         case GLFW_KEY_I:
             /* rotate around Z */
-            rotate_z += 1.0f;
+            //rotate_z += 1.0f;
+            axis_rotation = 2;
             std::cout << "rotation Z " << rotate_z << std::endl;
             break;
-        case GLFW_KEY_X:
-            /* rotate around Z */
-            mouseSpeed += 0.1f;
-            std::cout << "mouse speed " << mouseSpeed << std::endl;
+        case GLFW_KEY_DOWN:
+            center_sphere_r_speed -= 0.1f;
             break;
-        case GLFW_KEY_Z:
-            /* rotate around Z */
-            mouseSpeed -= 0.1f;
-            std::cout << "mouse speed  " << mouseSpeed << std::endl;
+        case GLFW_KEY_UP:
+            center_sphere_r_speed += 0.1f;
             break;
+        case GLFW_KEY_RIGHT:
+            cones_diagonals_rotation_speed += 0.1f;
+            break;
+        case GLFW_KEY_LEFT:
+            cones_diagonals_rotation_speed -= 0.1f;
+            break;
+
+        //case GLFW_KEY_X:
+        //    /* rotate around Z */
+        //    mouseSpeed += 0.1f;
+        //    std::cout << "mouse speed " << mouseSpeed << std::endl;
+        //    break;
+        //case GLFW_KEY_Z:
+        //    /* rotate around Z */
+        //    mouseSpeed -= 0.1f;
+        //    std::cout << "mouse speed  " << mouseSpeed << std::endl;
+        //    break;
         case GLFW_KEY_Q: /* Escape */ exit(0);
+            break;
+        default:
+            axis_rotation = -1;
             break;
 
         }
@@ -515,7 +765,7 @@ static void cursor_position_callback(GLFWwindow* window, double xpos, double ypo
     int stateL = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT);
     if (stateL == GLFW_PRESS)
     {   
-        if ((new_xpos - xpos) > 0) {
+       /* if ((new_xpos - xpos) > 0) {
             //std::cout << " CLICKED " << std::endl;
             move = 0;
             rotate_y += mouseSpeed;
@@ -536,10 +786,26 @@ static void cursor_position_callback(GLFWwindow* window, double xpos, double ypo
             
             rotate_x -= mouseSpeed;
             move = 3;
-        }
-        std::cout << "rotation Y " << rotate_y << std::endl;
-        std::cout << "rotation X " << rotate_x << std::endl;
+        }*/
+        switch (axis_rotation)
+        {
+        case 0:
+            rotate_x += mouseSpeed;
+            break;
+        case 1:
+            rotate_y += mouseSpeed;
+            break;
+        case 2:
+            rotate_z += mouseSpeed;
+            break;
 
+        default:
+            break;
+        }
+        std::cout << "rotation X " << rotate_x << std::endl;
+        std::cout << "rotation Y " << rotate_y << std::endl;
+        std::cout << "rotation Z " << rotate_z << std::endl;
+        
         /*   camera_posx += 1.0f;
            angle += 0.1f;
            camPos += camSpeed * camDirection;*/
