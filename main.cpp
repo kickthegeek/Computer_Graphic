@@ -80,8 +80,10 @@ float rotate_z = 0.0f;
 
 glm::vec4 background_color = glm::vec4 (getColor(213,50,50),1.0f);
 
-float r = 0.2f;
+int show_shapes = 0;
 
+float r = 0.5f;
+float ambient = 0.1f;
 
 float incr = 0.1f;
 float backg_r = 0.0f;
@@ -123,7 +125,7 @@ int main(void)
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_COMPAT_PROFILE);
 
     /* Create a windowed mode window and its OpenGL context */
-    window = glfwCreateWindow(800, 600, "Projet OpenGL SI MIV 2021 GUENAOUI + NAIT KACI ", NULL, NULL);
+    window = glfwCreateWindow(1024, 768, "Projet OpenGL SI MIV 2021 GUENAOUI + NAIT KACI ", NULL, NULL);
     if (!window)
     {
         glfwTerminate();
@@ -346,6 +348,24 @@ int main(void)
     // Get mouse position
     double xpos, ypos;
     glfwGetCursorPos(window, &xpos, &ypos);//getting mouse positions//
+
+
+    //Mercury path
+    float mercury_angle = 0.0f;
+    float mercury_speed = 0.2f;
+
+    //Venus path
+    float venus_angle = 0.1f;
+    float venus_speed= 0.05f;
+    // earth path
+    float earth_angle = 0.1f;
+    float earth_speed = 0.03f;
+
+    //moon path
+    float moon_angle = 0.0f;
+    float moon_speed = .1f;
+
+
     /* Loop until the user closes the window */
     while (!glfwWindowShouldClose(window))
     {
@@ -398,6 +418,7 @@ int main(void)
 
         //shader.SetUniform3f("lightPos", 1.0f, 1.0f, 5.0f);
         shader.SetUniform4f("lightColor", 1.0f, 1.0f, 1.0f, 1.0f);
+        shader.SetUniform1f("ambient_value", ambient);
         //shader.SetUniform3f("viewPos", 0.0f, 0.0f, 2.0f);
         //shader.SetUniform1i("u_Texture", 0);
       
@@ -454,7 +475,7 @@ int main(void)
         va.addBUffer(vbsphere, layout_sphere);
         IndexBuffer ibsphere(sphere_indices, sphere_indices_length);
         ibsphere.Bind();
-        GLCall(glDrawElements(GL_TRIANGLES, sphere_indices_length, GL_UNSIGNED_INT, (void*)0));
+        GLCall(glDrawElements(GL_POINTS, sphere_indices_length, GL_UNSIGNED_INT, (void*)0));
         //done with background
         
 
@@ -486,149 +507,249 @@ int main(void)
         ibsphere1.Bind();
         GLCall(glDrawElements(GL_TRIANGLES, sphere_indices_length, GL_UNSIGNED_INT, nullptr));
 
-        //drawing the cubes right +  left  
-        glm::mat4 cubes = glm::translate(Model, glm::vec3(0.0f, 0.0f, 0.0f));
-        cubes  = glm::rotate(cubes, glm::radians(center_sphere_r), glm::vec3(0, 0, 1));
-        MVP = Projection * View * cubes;
+
+        //showing the test shapes 
+        if (show_shapes == 0) {
+            //drawing the cubes right +  left  
+            glm::mat4 cubes = glm::translate(Model, glm::vec3(0.0f, 0.0f, 0.0f));
+            cubes = glm::rotate(cubes, glm::radians(center_sphere_r), glm::vec3(0, 0, 1));
+            MVP = Projection * View * cubes;
+            shader.SetUniformMat4("u_MVP", MVP);
+
+            //drawing the cube the right 
+            glm::mat4 cube_right = glm::translate(cubes, glm::vec3(2.0f, 0.0f, 0.0f));
+            cube_right = glm::rotate(cube_right, glm::radians(0.0f), glm::vec3(0, 1, 0));
+            //center_sphere = glm::scale(center_sphere, glm::vec3(center_radius, center_radius, center_radius));
+            MVP = Projection * View * cube_right;
+            shader.SetUniformMat4("u_MVP", MVP);
+
+
+            shader.SetUniform4f("u_Color", 0.0f, 0.5f, 1.f, 0.3f);
+            VertexBuffer vbcube(cube_vertexes, 8 * 3 * sizeof(float));
+            VertexBufferLayout layout_cube;
+            layout_cube.Push<float>(3);
+            vbcube.Bind();
+            va.addBUffer(vbcube, layout_cube);
+            IndexBuffer ibcube(cube_indices, cube_indices_length);
+            ibcube.Bind();
+            GLCall(glDrawElements(GL_TRIANGLES, cube_indices_length, GL_UNSIGNED_INT, nullptr));
+            //drawing the left cube 
+
+            glm::mat4 cube_left = glm::translate(cubes, glm::vec3(-2.0f, 0.0f, 0.0f));
+            cube_left = glm::rotate(cube_left, glm::radians(0.0f), glm::vec3(0, 1, 0));
+            //center_sphere = glm::scale(center_sphere, glm::vec3(center_radius, center_radius, center_radius));
+            MVP = Projection * View * cube_left;
+            shader.SetUniformMat4("u_MVP", MVP);
+
+
+            shader.SetUniform4f("u_Color", 0.0f, 0.3f, 0.8f, .3f);
+            VertexBuffer vbcubeleft(cube_vertexes, 8 * 3 * sizeof(float));
+            VertexBufferLayout layout_cube_left;
+            layout_cube_left.Push<float>(3);
+            vbcubeleft.Bind();
+            va.addBUffer(vbcubeleft, layout_cube_left);
+            IndexBuffer ibcubeleft(cube_indices, cube_indices_length);
+            ibcubeleft.Bind();
+            GLCall(glDrawElements(GL_TRIANGLES, cube_indices_length, GL_UNSIGNED_INT, nullptr));
+            //done with the cubes 
+
+            //drawing the cones diagonal one
+
+            glm::mat4 cones = glm::translate(Model, glm::vec3(0.0f, 0.0f, 0.0f));
+            cones = glm::rotate(cones, glm::radians(cones_diagonals_rotation), glm::vec3(0, 1, 0));
+            MVP = Projection * View * cones;
+            shader.SetUniformMat4("u_MVP", MVP);
+
+            //right diagonal 
+            glm::mat4 cones_right_diagonal = glm::translate(cones, glm::vec3(0.0f, 0.0f, 0.0f));
+            cones_right_diagonal = glm::rotate(cones_right_diagonal, glm::radians(45.0f), glm::vec3(0, 0, 1));
+            cones_right_diagonal = glm::rotate(cones_right_diagonal, glm::radians(cones_dr), glm::vec3(0, 1, 0));
+            MVP = Projection * View * cones_right_diagonal;
+            shader.SetUniformMat4("u_MVP", MVP);
+            //drawing first cone of the right diagonal
+            glm::mat4 cone_left = glm::translate(cones_right_diagonal, glm::vec3(2.0f, 0.0f, 0.0f));
+            cone_left = glm::rotate(cone_left, glm::radians(cone1_r), glm::vec3(1, 0, 0));
+            //center_sphere = glm::scale(center_sphere, glm::vec3(center_radius, center_radius, center_radius));
+            MVP = Projection * View * cone_left;
+            shader.SetUniformMat4("u_MVP", MVP);
+
+
+            shader.SetUniform4f("u_Color", 0.3f, 0.0f, 0.8f, .3f);
+            VertexBuffer vbconeleft(cone_vertexes, 5 * 3 * sizeof(float));
+            VertexBufferLayout layout_cone_left;
+            layout_cone_left.Push<float>(3);
+            vbconeleft.Bind();
+            va.addBUffer(vbconeleft, layout_cone_left);
+            IndexBuffer ibconeleft(cone_indices, cone_indices_length);
+            ibconeleft.Bind();
+            GLCall(glDrawElements(GL_TRIANGLES, cone_indices_length, GL_UNSIGNED_INT, nullptr));
+
+
+
+            //drawing second cone of the right diagonal
+            glm::mat4 cone_right = glm::translate(cones_right_diagonal, glm::vec3(-2.0f, 0.0f, 0.0f));
+            cone_right = glm::rotate(cone_right, glm::radians(cone2_r), glm::vec3(1, 0, 0));
+            cone_right = glm::scale(cone_right, glm::vec3(-1.0f, 1.0f, 1.0f));
+            //center_sphere = glm::scale(center_sphere, glm::vec3(center_radius, center_radius, center_radius));
+            MVP = Projection * View * cone_right;
+            shader.SetUniformMat4("u_MVP", MVP);
+
+
+            shader.SetUniform4f("u_Color", 0.3f, 0.0f, 0.8f, .3f);
+            VertexBuffer vbconeright(cone_vertexes, 5 * 3 * sizeof(float));
+            VertexBufferLayout layout_cone_right;
+            layout_cone_right.Push<float>(3);
+            vbconeright.Bind();
+            va.addBUffer(vbconeright, layout_cone_right);
+            IndexBuffer ibconeright(cone_indices, cone_indices_length);
+            ibconeright.Bind();
+            GLCall(glDrawElements(GL_TRIANGLES, cone_indices_length, GL_UNSIGNED_INT, nullptr));
+
+            // done with first diagonal 
+
+
+            //left diagonal
+            glm::mat4 cones_left_diagonal = glm::translate(cones, glm::vec3(0.0f, 0.0f, 0.0f));
+            cones_left_diagonal = glm::rotate(cones_left_diagonal, glm::radians(-45.0f), glm::vec3(0, 0, 1));
+            cones_left_diagonal = glm::rotate(cones_left_diagonal, glm::radians(cones_dl), glm::vec3(0, 1, 0)); // rotating
+            MVP = Projection * View * cones_left_diagonal;
+            shader.SetUniformMat4("u_MVP", MVP);
+            //drawing first cone of the left diagonal
+            glm::mat4 cone_left_1 = glm::translate(cones_left_diagonal, glm::vec3(2.0f, 0.0f, 0.0f));
+            cone_left_1 = glm::rotate(cone_left_1, glm::radians(cone3_r), glm::vec3(1, 0, 0));
+            //center_sphere = glm::scale(center_sphere, glm::vec3(center_radius, center_radius, center_radius));
+            MVP = Projection * View * cone_left_1;
+            shader.SetUniformMat4("u_MVP", MVP);
+
+
+            shader.SetUniform4f("u_Color", 0.3f, 0.0f, 0.8f, .3f);
+            VertexBuffer vbconeleft_1(cone_vertexes, 5 * 3 * sizeof(float));
+            VertexBufferLayout layout_cone_left_1;
+            layout_cone_left_1.Push<float>(3);
+            vbconeleft_1.Bind();
+            va.addBUffer(vbconeleft_1, layout_cone_left_1);
+            IndexBuffer ibconeleft_1(cone_indices, cone_indices_length);
+            ibconeleft_1.Bind();
+            GLCall(glDrawElements(GL_TRIANGLES, cone_indices_length, GL_UNSIGNED_INT, nullptr));
+
+
+
+            //drawing second cone of the left diagonal 
+            glm::mat4 cone_right_1 = glm::translate(cones_left_diagonal, glm::vec3(-2.0f, 0.0f, 0.0f));
+            cone_right_1 = glm::rotate(cone_right_1, glm::radians(cone4_r), glm::vec3(1, 0, 0));
+            cone_right_1 = glm::scale(cone_right_1, glm::vec3(-1.0f, 1.0f, 1.0f));
+            //center_sphere = glm::scale(center_sphere, glm::vec3(center_radius, center_radius, center_radius));
+            MVP = Projection * View * cone_right_1;
+            shader.SetUniformMat4("u_MVP", MVP);
+
+
+            shader.SetUniform4f("u_Color", 0.3f, 0.0f, 0.8f, .3f);
+            VertexBuffer vbconeright_1(cone_vertexes, 5 * 3 * sizeof(float));
+            VertexBufferLayout layout_cone_right_1;
+            layout_cone_right_1.Push<float>(3);
+            vbconeright_1.Bind();
+            va.addBUffer(vbconeright_1, layout_cone_right_1);
+            IndexBuffer ibconeright_1(cone_indices, cone_indices_length);
+            ibconeright_1.Bind();
+            GLCall(glDrawElements(GL_TRIANGLES, cone_indices_length, GL_UNSIGNED_INT, nullptr));
+        }
+
+
+        //solaire System --------------------------------------------------------------------------------
+        //murcury path 
+        float d = 2.0f;
+        float mr_x = d * sin(mercury_angle);
+        float mr_z = d * cos(mercury_angle);
+        glm::mat4 mercury_mat = glm::translate(Model, glm::vec3(mr_x, 0.0f, mr_z));
+        //mercury_mat = glm::rotate(mercury_mat, glm::radians(mercury_angle), glm::vec3(0, 1, 0)); // it turns on it self
+        mercury_mat = glm::scale(mercury_mat, glm::vec3(0.10f, 0.10f, 0.1f));
+        MVP = Projection * View * mercury_mat;
         shader.SetUniformMat4("u_MVP", MVP);
+
+        //drawing Mercury 
+        shader.SetUniform4f("u_Color", 0.48f, .32f, 0.14f, 1.0f);
+        //drawing ball
+        VertexBuffer vbMercury(sphere_vertexes, (vertices_length) * sizeof(float));
+        VertexBufferLayout layout_mercury;
+        layout_mercury.Push<float>(3);
+        vbMercury.Bind();
+        va.addBUffer(vbMercury, layout_mercury);
+        IndexBuffer ibMercury(sphere_indices, sphere_indices_length);
+        ibMercury.Bind();
+        GLCall(glDrawElements(GL_TRIANGLES, sphere_indices_length, GL_UNSIGNED_INT, (void*)0));
+
+
+        //drawing VENUS 
+        float venus_d = 3.0f;
+        float venus_x = venus_d * sin(venus_angle);
+        float venus_z = venus_d * cos(venus_angle);
+        glm::mat4 venus_mat = glm::translate(Model, glm::vec3(venus_x, 0.0f,venus_z));
+        venus_mat = glm::rotate(venus_mat, glm::radians(venus_speed), glm::vec3(0, 1, 0));
+        venus_mat = glm::scale(venus_mat, glm::vec3(0.15f, 0.15f, 0.15f));
+        MVP = Projection * View * venus_mat;
+        shader.SetUniformMat4("u_MVP", MVP);
+
+
+
+        //drawing VENUS 
+        shader.SetUniform4f("u_Color", 0.68f, .36f, 0.07f, 1.0f);
+        //drawing ball
+        VertexBuffer vbVenus(sphere_vertexes, (vertices_length) * sizeof(float));
+        VertexBufferLayout layout_Venus;
+        layout_Venus.Push<float>(3);
+        vbVenus.Bind();
+        va.addBUffer(vbVenus, layout_mercury);
+        IndexBuffer ibVenus(sphere_indices, sphere_indices_length);
+        ibVenus.Bind();
+        GLCall(glDrawElements(GL_TRIANGLES, sphere_indices_length, GL_UNSIGNED_INT, (void*)0));
+
+
+        //drawing EARTH 
+        float earth_d = 4.0f;
+        float earth_x = earth_d * sin(earth_angle);
+        float earth_z = earth_d * cos(earth_angle);
+        glm::mat4 earth_mat = glm::translate(Model, glm::vec3(earth_x, 0.0f, earth_z));
+        earth_mat = glm::rotate(earth_mat, glm::radians(earth_angle), glm::vec3(0, 1, 0));
+        earth_mat = glm::scale(earth_mat, glm::vec3(0.20f, 0.20f, 0.20f));
+        MVP = Projection * View * earth_mat;
+        shader.SetUniformMat4("u_MVP", MVP);
+
+
+
+        //drawing 
+        shader.SetUniform4f("u_Color", 0.03f, 0.73f, 0.86f, 1.0f);
+        //drawing ball
+        VertexBuffer vbEarth(sphere_vertexes, (vertices_length) * sizeof(float));
+        VertexBufferLayout layout_Earth;
+        layout_Earth.Push<float>(3);
+        vbEarth.Bind();
+        va.addBUffer(vbEarth, layout_Earth);
+        IndexBuffer ibEarth(sphere_indices, sphere_indices_length);
+        ibEarth.Bind();
+        GLCall(glDrawElements(GL_TRIANGLES, sphere_indices_length, GL_UNSIGNED_INT, (void*)0));
+
+
+        //drawing earth moon
         
-        //drawing the cube the right 
-        glm::mat4 cube_right = glm::translate(cubes, glm::vec3(2.0f, 0.0f, 0.0f));
-        cube_right = glm::rotate(cube_right, glm::radians(0.0f), glm::vec3(0, 1, 0));
-        //center_sphere = glm::scale(center_sphere, glm::vec3(center_radius, center_radius, center_radius));
-        MVP = Projection * View * cube_right;
+        float moon_d = 3.0f;
+        float moon_x = moon_d * sin(moon_angle);
+        float moon_z = moon_d * cos(moon_angle);
+        glm::mat4 moon_mat = glm::translate(earth_mat, glm::vec3(moon_x, 0.0f, moon_z));
+        moon_mat = glm::rotate(moon_mat, glm::radians(earth_angle), glm::vec3(0, 1, 0)); // turns on himeself
+        moon_mat = glm::scale(moon_mat, glm::vec3(0.20f, 0.20f, .20f));
+        MVP = Projection * View * moon_mat;
         shader.SetUniformMat4("u_MVP", MVP);
-
-        
-        shader.SetUniform4f("u_Color", 0.0f, 0.5f, 1.f, 0.3f);
-        VertexBuffer vbcube(cube_vertexes, 8 * 3 * sizeof(float));
-        VertexBufferLayout layout_cube;
-        layout_cube.Push<float>(3);
-        vbcube.Bind();
-        va.addBUffer(vbcube, layout_cube);
-        IndexBuffer ibcube(cube_indices, cube_indices_length);
-        ibcube.Bind();
-        GLCall(glDrawElements(GL_TRIANGLES, cube_indices_length, GL_UNSIGNED_INT, nullptr));
-        //drawing the left cube 
-        
-        glm::mat4 cube_left = glm::translate(cubes, glm::vec3(-2.0f, 0.0f, 0.0f));
-        cube_left = glm::rotate(cube_left, glm::radians(0.0f), glm::vec3(0, 1, 0));
-        //center_sphere = glm::scale(center_sphere, glm::vec3(center_radius, center_radius, center_radius));
-        MVP = Projection * View * cube_left;
-        shader.SetUniformMat4("u_MVP", MVP);
-
-
-        shader.SetUniform4f("u_Color", 0.0f, 0.3f, 0.8f, .3f);
-        VertexBuffer vbcubeleft(cube_vertexes, 8 * 3 * sizeof(float));
-        VertexBufferLayout layout_cube_left;
-        layout_cube_left.Push<float>(3);
-        vbcubeleft.Bind();
-        va.addBUffer(vbcubeleft, layout_cube_left);
-        IndexBuffer ibcubeleft(cube_indices, cube_indices_length);
-        ibcubeleft.Bind();
-        GLCall(glDrawElements(GL_TRIANGLES, cube_indices_length, GL_UNSIGNED_INT, nullptr));
-        //done with the cubes 
-
-        //drawing the cones diagonal one
-        
-        glm::mat4 cones = glm::translate(Model, glm::vec3(0.0f, 0.0f, 0.0f));
-        cones = glm::rotate(cones, glm::radians(cones_diagonals_rotation), glm::vec3(0, 1, 0));
-        MVP = Projection * View * cones;
-        shader.SetUniformMat4("u_MVP", MVP);
-
-        //right diagonal 
-        glm::mat4 cones_right_diagonal = glm::translate(cones, glm::vec3(0.0f, 0.0f, 0.0f));
-        cones_right_diagonal = glm::rotate(cones_right_diagonal, glm::radians(45.0f), glm::vec3(0, 0, 1));
-        cones_right_diagonal = glm::rotate(cones_right_diagonal, glm::radians(cones_dr), glm::vec3(0, 1, 0));
-        MVP = Projection * View * cones_right_diagonal;
-        shader.SetUniformMat4("u_MVP", MVP);
-        //drawing first cone of the right diagonal
-        glm::mat4 cone_left = glm::translate(cones_right_diagonal, glm::vec3(2.0f, 0.0f, 0.0f));
-        cone_left = glm::rotate(cone_left, glm::radians(cone1_r), glm::vec3(1, 0, 0));
-        //center_sphere = glm::scale(center_sphere, glm::vec3(center_radius, center_radius, center_radius));
-        MVP = Projection * View * cone_left;
-        shader.SetUniformMat4("u_MVP", MVP);
-
-
-        shader.SetUniform4f("u_Color", 0.3f, 0.0f, 0.8f, .3f);
-        VertexBuffer vbconeleft(cone_vertexes, 5 * 3 * sizeof(float));
-        VertexBufferLayout layout_cone_left;
-        layout_cone_left.Push<float>(3);
-        vbconeleft.Bind();
-        va.addBUffer(vbconeleft, layout_cone_left);
-        IndexBuffer ibconeleft(cone_indices, cone_indices_length);
-        ibconeleft.Bind();
-        GLCall(glDrawElements(GL_TRIANGLES, cone_indices_length, GL_UNSIGNED_INT, nullptr));
-        
-       
-
-        //drawing second cone of the right diagonal
-        glm::mat4 cone_right = glm::translate(cones_right_diagonal, glm::vec3(-2.0f, 0.0f, 0.0f));
-        cone_right = glm::rotate(cone_right, glm::radians(cone2_r), glm::vec3(1, 0, 0));
-        cone_right = glm::scale(cone_right, glm::vec3(-1.0f,1.0f,1.0f));
-        //center_sphere = glm::scale(center_sphere, glm::vec3(center_radius, center_radius, center_radius));
-        MVP = Projection * View * cone_right;
-        shader.SetUniformMat4("u_MVP", MVP);
-
-
-        shader.SetUniform4f("u_Color", 0.3f, 0.0f, 0.8f, .3f);
-        VertexBuffer vbconeright(cone_vertexes, 5 * 3 * sizeof(float));
-        VertexBufferLayout layout_cone_right;
-        layout_cone_right.Push<float>(3);
-        vbconeright.Bind();
-        va.addBUffer(vbconeright, layout_cone_right);
-        IndexBuffer ibconeright(cone_indices, cone_indices_length);
-        ibconeright.Bind();
-        GLCall(glDrawElements(GL_TRIANGLES, cone_indices_length, GL_UNSIGNED_INT, nullptr));
-
-        // done with first diagonal 
-
-
-        //left diagonal
-        glm::mat4 cones_left_diagonal = glm::translate(cones, glm::vec3(0.0f, 0.0f, 0.0f));
-        cones_left_diagonal = glm::rotate(cones_left_diagonal, glm::radians(-45.0f), glm::vec3(0, 0, 1));
-        cones_left_diagonal = glm::rotate(cones_left_diagonal, glm::radians(cones_dl), glm::vec3(0, 1, 0)); // rotating
-        MVP = Projection * View * cones_left_diagonal;
-        shader.SetUniformMat4("u_MVP", MVP);
-        //drawing first cone of the left diagonal
-        glm::mat4 cone_left_1 = glm::translate(cones_left_diagonal, glm::vec3(2.0f, 0.0f, 0.0f));
-        cone_left_1 = glm::rotate(cone_left_1, glm::radians(cone3_r), glm::vec3(1, 0, 0));
-        //center_sphere = glm::scale(center_sphere, glm::vec3(center_radius, center_radius, center_radius));
-        MVP = Projection * View * cone_left_1;
-        shader.SetUniformMat4("u_MVP", MVP);
-
-
-        shader.SetUniform4f("u_Color", 0.3f, 0.0f, 0.8f, .3f);
-        VertexBuffer vbconeleft_1(cone_vertexes, 5 * 3 * sizeof(float));
-        VertexBufferLayout layout_cone_left_1;
-        layout_cone_left_1.Push<float>(3);
-        vbconeleft_1.Bind();
-        va.addBUffer(vbconeleft_1, layout_cone_left_1);
-        IndexBuffer ibconeleft_1(cone_indices, cone_indices_length);
-        ibconeleft_1.Bind();
-        GLCall(glDrawElements(GL_TRIANGLES, cone_indices_length, GL_UNSIGNED_INT, nullptr));
-
-
-
-        //drawing second cone of the left diagonal 
-        glm::mat4 cone_right_1 = glm::translate(cones_left_diagonal, glm::vec3(-2.0f, 0.0f, 0.0f));
-        cone_right_1 = glm::rotate(cone_right_1, glm::radians(cone4_r), glm::vec3(1, 0, 0));
-        cone_right_1 = glm::scale(cone_right_1, glm::vec3(-1.0f, 1.0f, 1.0f));
-        //center_sphere = glm::scale(center_sphere, glm::vec3(center_radius, center_radius, center_radius));
-        MVP = Projection * View * cone_right_1;
-        shader.SetUniformMat4("u_MVP", MVP);
-
-
-        shader.SetUniform4f("u_Color", 0.3f, 0.0f, 0.8f, .3f);
-        VertexBuffer vbconeright_1(cone_vertexes, 5 * 3 * sizeof(float));
-        VertexBufferLayout layout_cone_right_1;
-        layout_cone_right_1.Push<float>(3);
-        vbconeright_1.Bind();
-        va.addBUffer(vbconeright_1, layout_cone_right_1);
-        IndexBuffer ibconeright_1(cone_indices, cone_indices_length);
-        ibconeright_1.Bind();
-        GLCall(glDrawElements(GL_TRIANGLES, cone_indices_length, GL_UNSIGNED_INT, nullptr));
-
+        //drawing 
+        shader.SetUniform4f("u_Color", 0.52f, 0.84f, 0.65f, 1.0f);
+        //drawing ball
+        VertexBuffer vbMoon(sphere_vertexes, (vertices_length) * sizeof(float));
+        VertexBufferLayout layout_Moon;
+        layout_Moon.Push<float>(3);
+        vbMoon.Bind();
+        va.addBUffer(vbMoon, layout_Moon);
+        IndexBuffer ibMoon(sphere_indices, sphere_indices_length);
+        ibMoon.Bind();
+        GLCall(glDrawElements(GL_TRIANGLES, sphere_indices_length, GL_UNSIGNED_INT, (void*)0));
 
 
         //going back to original matrix
@@ -660,7 +781,12 @@ int main(void)
         if (cones_dl > 360.f)
             cones_dl = 0.0f;
         
-      
+
+        //planets paths 
+        mercury_angle += mercury_speed/2;
+        venus_angle += venus_speed/2;
+        earth_angle += earth_speed/2;
+        moon_angle += moon_speed/2;
         ////drawing square
         //shader.SetUniform4f("u_Color", r, 0.3f, 0.8f, 1.0f)
         //VertexBuffer vb(positions, 6 * 4 * sizeof(float));
@@ -755,7 +881,19 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
         case GLFW_KEY_LEFT:
             cones_diagonals_rotation_speed -= 0.1f;
             break;
-
+        case GLFW_KEY_L:
+            ambient += 0.1f;
+            break;
+        case GLFW_KEY_K:
+            ambient -= 0.1f;
+            break;
+        case GLFW_KEY_Z:
+            if (show_shapes == 0) {
+                show_shapes = 1;
+                break;
+            }
+            show_shapes = 0;
+            break;
         //case GLFW_KEY_X:
         //    /* rotate around Z */
         //    mouseSpeed += 0.1f;
@@ -835,7 +973,7 @@ static void cursor_position_callback(GLFWwindow* window, double xpos, double ypo
     if (stateR == GLFW_PRESS)
     {
         //std::cout << " CLICKED " << std::endl;
-        scale += 0.1f;
+        scale += 0.01f;
         std::cout << "scale  " << scale<< std::endl;
 
         /*   camera_posx += 1.0f;
@@ -847,7 +985,7 @@ static void cursor_position_callback(GLFWwindow* window, double xpos, double ypo
     if (stateM == GLFW_PRESS)
     {
         //std::cout << " CLICKED " << std::endl;
-        scale -= 0.1f;
+        scale -= 0.01f;
         if (scale < 0)
             scale = 0.1f;
         std::cout << "scale  " << scale << std::endl;
